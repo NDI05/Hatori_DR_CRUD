@@ -41,6 +41,20 @@ namespace PraktikumADO
             }
         }
 
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex == 0)
+            {
+                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
+
+                textBox1.Text = row.Cells["NIM"].Value.ToString();
+                textBox5.Text = row.Cells["Nama"].Value.ToString();
+                comboBox1.Text = row.Cells["JenisKelamin"].Value.ToString();
+                dateTimePicker1.Value = Convert.ToDateTime(row.Cells["TanggalLahir"].Value);
+                textBox3.Text = row.Cells["Alamat"].Value.ToString();
+                textBox2.Text = row.Cells["KodeProdi"].Value.ToString();
+            }
+        }
         private void label1_Click(object sender, EventArgs e)
         {
 
@@ -58,7 +72,17 @@ namespace PraktikumADO
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            comboBox1.Items.Clear();
+            comboBox1.Items.Add("L");
+            comboBox1.Items.Add("P");
 
+            dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridView1.MultiSelect = false;
+            dataGridView1.ReadOnly = true;
+            dataGridView1.AllowUserToAddRows = false;
+            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            dataGridView1.CellClick += dataGridView1_CellContentClick;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -112,21 +136,6 @@ namespace PraktikumADO
             }
         }
 
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex == 0)
-            {
-                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
-
-                textBox1.Text = row.Cells["NIM"].Value.ToString();
-                textBox5.Text = row.Cells["Nama"].Value.ToString();
-                comboBox1.Text = row.Cells["JenisKelamin"].Value.ToString();
-                dateTimePicker1.Value = Convert.ToDateTime(row.Cells["TanggalLahir"].Value);
-                textBox3.Text = row.Cells["Alamat"].Value.ToString();
-                textBox2.Text = row.Cells["KodeProdi"].Value.ToString();
-            }
-        }
-
         private void button3_Click(object sender, EventArgs e)
         {
             try
@@ -172,6 +181,7 @@ namespace PraktikumADO
                 if (result > 0)
                 {
                     MessageBox.Show("Data berhasil ditambahkan!");
+                    clearForm();
                     button2.PerformClick(); // Refresh data grid view
                 }
                 else
@@ -214,6 +224,7 @@ namespace PraktikumADO
                 if (result > 0)
                 {
                     MessageBox.Show("Data berhasil diupdate!");
+                    clearForm();
                     button2.PerformClick();
                 }
                 else
@@ -245,6 +256,7 @@ namespace PraktikumADO
                 if (result > 0)
                 {
                     MessageBox.Show("Data berhasil dihapus!");
+                    clearForm();
                     button2.PerformClick();
                 }
                 else

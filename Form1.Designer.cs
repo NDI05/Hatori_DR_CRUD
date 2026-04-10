@@ -184,7 +184,7 @@
             // 
             this.button3.Location = new System.Drawing.Point(520, 137);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(188, 32);
+            this.button3.Size = new System.Drawing.Size(188, 38);
             this.button3.TabIndex = 17;
             this.button3.Text = "Menambahkan Data";
             this.button3.UseVisualStyleBackColor = true;
@@ -192,9 +192,9 @@
             // 
             // button4
             // 
-            this.button4.Location = new System.Drawing.Point(520, 175);
+            this.button4.Location = new System.Drawing.Point(520, 178);
             this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(188, 28);
+            this.button4.Size = new System.Drawing.Size(188, 41);
             this.button4.TabIndex = 18;
             this.button4.Text = "Mengubah Data";
             this.button4.UseVisualStyleBackColor = true;
@@ -202,9 +202,9 @@
             // 
             // button5
             // 
-            this.button5.Location = new System.Drawing.Point(520, 209);
+            this.button5.Location = new System.Drawing.Point(520, 225);
             this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(188, 26);
+            this.button5.Size = new System.Drawing.Size(188, 37);
             this.button5.TabIndex = 19;
             this.button5.Text = "Menghapus Data";
             this.button5.UseVisualStyleBackColor = true;
@@ -214,13 +214,14 @@
             // 
             this.dataGridView1.AllowUserToAddRows = false;
             this.dataGridView1.AllowUserToDeleteRows = false;
+            this.dataGridView1.AllowUserToOrderColumns = true;
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(48, 316);
+            this.dataGridView1.Location = new System.Drawing.Point(12, 316);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.ReadOnly = true;
             this.dataGridView1.RowHeadersWidth = 62;
             this.dataGridView1.RowTemplate.Height = 28;
-            this.dataGridView1.Size = new System.Drawing.Size(660, 164);
+            this.dataGridView1.Size = new System.Drawing.Size(776, 345);
             this.dataGridView1.TabIndex = 20;
             this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             // 
