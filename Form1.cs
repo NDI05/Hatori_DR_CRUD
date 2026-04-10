@@ -114,7 +114,17 @@ namespace PraktikumADO
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
+            if (e.RowIndex == 0)
+            {
+                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
 
+                textBox1.Text = row.Cells["NIM"].Value.ToString();
+                textBox5.Text = row.Cells["Nama"].Value.ToString();
+                comboBox1.Text = row.Cells["JenisKelamin"].Value.ToString();
+                dateTimePicker1.Value = Convert.ToDateTime(row.Cells["TanggalLahir"].Value);
+                textBox3.Text = row.Cells["Alamat"].Value.ToString();
+                textBox2.Text = row.Cells["KodeProdi"].Value.ToString();
+            }
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -216,6 +226,46 @@ namespace PraktikumADO
             {
                 MessageBox.Show("Error: " + ex.Message);
             }
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (conn.State == System.Data.ConnectionState.Closed)
+                {
+                    conn.Open();
+                }
+
+                DialogResult dialogResult = MessageBox.Show("Apakah Anda yakin ingin menghapus data ini?", "Konfirmasi Hapus", MessageBoxButtons.YesNo);
+                string query = "DELETE FROM MAHASISWA WHERE NIM=@NIM";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@NIM", textBox1.Text);
+                int result = cmd.ExecuteNonQuery();
+                if (result > 0)
+                {
+                    MessageBox.Show("Data berhasil dihapus!");
+                    button2.PerformClick();
+                }
+                else
+                {
+                    MessageBox.Show("Gagal menghapus data.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
+        }
+
+        private void clearForm()
+        {
+            textBox1.Clear();
+            textBox5.Clear();
+            comboBox1.SelectedIndex = -1;
+            dateTimePicker1.Value = DateTime.Now;
+            textBox3.Clear();
+            textBox2.Clear();
         }
     }
 }
