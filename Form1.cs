@@ -16,18 +16,29 @@ namespace PraktikumADO
 {
     public partial class Form1 : Form
     {
-        SqlConnection conn;
-        SqlCommand cmd;
 
-        private void koneksi()
-        {
-            string connectionString = "Data Source=XBOOK_B14\\SQLEXPRESS;Initial Catalog=PraktikumADO;Integrated Security=True";
-            conn = new SqlConnection(connectionString);
-        }   
-
+        private readonly SqlConnection conn;
+        private readonly string connectionString = "Data Source=XBOOK_B14\\SQLEXPRESS;Initial Catalog=DBAkademikADO;Integrated Security=True";
         public Form1()
         {
             InitializeComponent();
+            conn = new SqlConnection(connectionString);
+        }
+
+        private void ConnectDatabase()
+        {
+            try
+            {
+                if (conn.State == ConnectionState.Closed)
+                {
+                    conn.Open();
+                    MessageBox.Show("Koneksi berhasil!");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Koneksi gagal: " + ex.Message);
+            }
         }
 
         private void label1_Click(object sender, EventArgs e)
@@ -43,6 +54,16 @@ namespace PraktikumADO
         private void label5_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            ConnectDatabase();
         }
     }
 }
