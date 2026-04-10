@@ -162,13 +162,55 @@ namespace PraktikumADO
                 if (result > 0)
                 {
                     MessageBox.Show("Data berhasil ditambahkan!");
-                    
                     button2.PerformClick(); // Refresh data grid view
                 }
                 else
                 {
                     MessageBox.Show("Gagal menambahkan data.");
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (conn.State == System.Data.ConnectionState.Closed)
+                {
+                    conn.Open();
+                }
+                string query = @"UPDATE MAHASISWA
+                                SET NAMA=@Nama,
+                                JenisKelamin=@JenisKelamin,
+                                TanggalLahir=@TanggalLahir,
+                                Alamat=@Alamat,
+                                KodeProdi=@KodeProdi
+                                WHERE NIM=@NIM";
+                SqlCommand cmd = new SqlCommand(query, conn);
+
+                cmd.Parameters.AddWithValue("@NIM", textBox1.Text);
+                cmd.Parameters.AddWithValue("@Nama", textBox5.Text);
+                cmd.Parameters.AddWithValue("@JenisKelamin", comboBox1.Text);
+                cmd.Parameters.AddWithValue("@TanggalLahir", dateTimePicker1.Value.Date);
+                cmd.Parameters.AddWithValue("@Alamat", textBox3.Text);
+                cmd.Parameters.AddWithValue("@KodeProdi", textBox2.Text);
+
+                int result = cmd.ExecuteNonQuery();
+
+                if (result > 0)
+                {
+                    MessageBox.Show("Data berhasil diupdate!");
+                    button2.PerformClick();
+                }
+                else
+                {
+                    MessageBox.Show("Gagal mengupdate data.");
+                }
+
             }
             catch (Exception ex)
             {
