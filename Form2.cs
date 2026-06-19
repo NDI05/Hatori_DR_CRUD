@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -14,16 +14,13 @@ namespace PraktikumADO
     public partial class Form2 : Form
     {
 
-        static string connectionString = "Data Source=XBOOK_B14\\SQLEXPRESS;Initial Catalog=DBAkademikADO;Integrated Security=True";
-
-        SqlConnection conn = new SqlConnection(connectionString);
+        DAL dbLogic = new DAL();
         SqlDataAdapter da;
         DataTable dtMahasiswa;
         DataTable dtProdi;
         public Form2()
         {
             InitializeComponent();
-            DAL dbLogic = new DAL();
         }
 
         private void Form2_Load(object sender, EventArgs e)
@@ -39,16 +36,7 @@ namespace PraktikumADO
             btnCetak.Enabled = false;
             try
             {
-                if (conn.State == ConnectionState.Closed)
-                {
-                    conn.Open();
-                }
-
-                SqlCommand cmd = new SqlCommand("select namaprodi from programstudi", conn);
-                cmd.CommandType = CommandType.Text;
-                dtProdi = new DataTable();
-                da = new SqlDataAdapter(cmd);
-                da.Fill(dtProdi);
+                dtProdi = dbLogic.getProdi();
                 cmbProdi.DataSource = dtProdi;
                 cmbProdi.DisplayMember = "namaprodi";
 
@@ -63,19 +51,7 @@ namespace PraktikumADO
         {
             try
             {
-                if (conn.State == ConnectionState.Closed)
-                {
-                    conn.Open();
-                }
-                SqlCommand cmd = new SqlCommand("sp_Report", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.Add("@inProdi", SqlDbType.VarChar, 50).Value = cmbProdi.Text;
-                cmd.Parameters.Add("@inTglMsuk", SqlDbType.VarChar, 4).Value = dtpTanggalMasuk.Value.Year.ToString();
-
-                da = new SqlDataAdapter(cmd);
-
-                dtMahasiswa = new DataTable();
-                da.Fill(dtMahasiswa);
+                dtMahasiswa = dbLogic.getDataRekap(cmbProdi.Text, dtpTanggalMasuk.Value);
 
                 dataGridView1.DataSource = dtMahasiswa;
 
@@ -110,3 +86,4 @@ namespace PraktikumADO
 
 
 }
+

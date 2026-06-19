@@ -1,4 +1,4 @@
-﻿using ExcelDataReader;
+using ExcelDataReader;
 using System;
 using System.Data;
 using System.Data.SqlClient;
@@ -148,7 +148,6 @@ namespace PraktikumADO
 
                 byte[] imgBytes = ConvertImageToByte(fotoMhs);
                 dbLogic.InsertMhs(txtNIM.Text, txtNama.Text, txtAlamat.Text, cmbJK.Text, dtpTanggalLahir.Value.Date, txtKodeProdi.Text, imgBytes);
-                MessageBox.Show("Data berhasil disimpan!");
                 ClearForm();
                 LoadData();
             }
@@ -305,7 +304,7 @@ namespace PraktikumADO
 
         private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex == 0)
+            if (e.RowIndex >= 0)
             {
                 DataRow row =((DataRowView) dataGridView1.Rows[e.RowIndex].DataBoundItem).Row;
                 txtNIM.Text = row[0].ToString();

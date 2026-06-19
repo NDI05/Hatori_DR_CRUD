@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -130,15 +130,15 @@ namespace PraktikumADO
                 using (SqlCommand cmd = new SqlCommand("sp_UpdateMahasiswa", connection))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@pNIM", nim);
-                    cmd.Parameters.AddWithValue("@pNama", nama);
-                    cmd.Parameters.AddWithValue("@pJenisKelamin", jenisKelamin);
-                    cmd.Parameters.AddWithValue("@pTanggalLahir", tanggalLahir);
-                    cmd.Parameters.AddWithValue("@pAlamat", alamat);
-                    cmd.Parameters.AddWithValue("@pKodeProdi", kodeProdi);
+                    cmd.Parameters.AddWithValue("@NIM", nim);
+                    cmd.Parameters.AddWithValue("@Nama", nama);
+                    cmd.Parameters.AddWithValue("@JenisKelamin", jenisKelamin);
+                    cmd.Parameters.AddWithValue("@TanggalLahir", tanggalLahir);
+                    cmd.Parameters.AddWithValue("@Alamat", alamat);
+                    cmd.Parameters.AddWithValue("@KodeProdi", kodeProdi);
                     cmd.Parameters.AddWithValue("@pFoto", foto);
 
-                cmd.ExecuteNonQuery();
+                    cmd.ExecuteNonQuery();
                 }
             }
         }
@@ -148,7 +148,7 @@ namespace PraktikumADO
             {
                 connection.Open();
                 SqlCommand cmd = new SqlCommand("sp_DeleteMahasiswa", connection);
-                cmd.Parameters.AddWithValue("@pNIM", nim);
+                cmd.Parameters.AddWithValue("@NIM", nim);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.ExecuteNonQuery();
             }
@@ -206,7 +206,7 @@ namespace PraktikumADO
         {
             if (conn.State == ConnectionState.Closed)
                 { conn.Open(); }
-            SqlCommand cmd = new SqlCommand("SELECT namaprodi FROM prodi", conn);
+            SqlCommand cmd = new SqlCommand("SELECT namaprodi FROM ProgramStudi", conn);
             da = new SqlDataAdapter(cmd);
             dtProdi = new DataTable();
             da.Fill(dtProdi);
