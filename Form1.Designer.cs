@@ -1,4 +1,4 @@
-﻿namespace PraktikumADO
+namespace PraktikumADO
 {
     partial class Form1
     {
@@ -527,9 +527,11 @@
             // 
             // fotoMhs
             // 
+            this.fotoMhs.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.fotoMhs.Location = new System.Drawing.Point(604, 89);
             this.fotoMhs.Name = "fotoMhs";
             this.fotoMhs.Size = new System.Drawing.Size(155, 182);
+            this.fotoMhs.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.fotoMhs.TabIndex = 32;
             this.fotoMhs.TabStop = false;
             // 

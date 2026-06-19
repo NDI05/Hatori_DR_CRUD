@@ -315,10 +315,9 @@ namespace PraktikumADO
                 txtKodeProdi.Text = row[6].ToString();
                 if (row[5] != DBNull.Value)
                 {
-                    using (MemoryStream ms = new MemoryStream((byte[])row[5]))
-                    {
-                        fotoMhs.Image = System.Drawing.Image.FromStream(ms);
-                    }
+                    byte[] imgData = (byte[])row[5];
+                    MemoryStream ms = new MemoryStream(imgData);
+                    fotoMhs.Image = System.Drawing.Image.FromStream(ms);
                 }
                 else
                 {
