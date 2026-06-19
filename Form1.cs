@@ -297,6 +297,41 @@ namespace PraktikumADO
             txtNIM.Focus();
         }
 
+        private void btnRefresh_Click(object sender, EventArgs e)
+        {
+            ClearForm();
+            LoadData();
+        }
+
+        private void btnCari_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(txtNIM.Text))
+                {
+                    MessageBox.Show("Silakan isi NIM yang akan dicari.", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                DataTable dt = dbLogic.GetMhsByNIM(txtNIM.Text);
+                if (dt.Rows.Count > 0)
+                {
+                    bindingSource.DataSource = dt;
+                    dataGridView1.DataSource = bindingSource;
+                    HitungTotal();
+                }
+                else
+                {
+                    MessageBox.Show("Data dengan NIM " + txtNIM.Text + " tidak ditemukan.", "Informasi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadData(); // Kembalikan data seperti semula jika tidak ketemu
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error saat mencari data: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
 
