@@ -347,7 +347,7 @@ namespace PraktikumADO
                 cmbJK.Text = row[2].ToString();
                 dtpTanggalLahir.Value = Convert.ToDateTime(row[3]);
                 txtAlamat.Text = row[4].ToString();
-                txtKodeProdi.Text = row[6].ToString();
+                txtKodeProdi.Text = row["KodeProdi"].ToString();
                 if (row[5] != DBNull.Value)
                 {
                     byte[] imgData = (byte[])row[5];
