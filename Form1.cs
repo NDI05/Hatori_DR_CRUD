@@ -1,283 +1,435 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
+﻿using ExcelDataReader;
 using System;
-using System.Windows.Forms;
+using System.Data;
 using System.Data.SqlClient;
+using System.IO;
+using System.Windows.Forms;
 
 namespace PraktikumADO
 {
     public partial class Form1 : Form
     {
+        //private readonly SqlConnection conn;
+        //private readonly string connectionString = "Data Source=XBOOK_B14\\SQLEXPRESS;Initial Catalog=DBAkademikADO;Integrated Security=True";
 
-        private readonly SqlConnection conn;
-        private readonly string connectionString = "Data Source=XBOOK_B14\\SQLEXPRESS;Initial Catalog=DBAkademikADO;Integrated Security=True";
+        // Objek Core untuk Data Binding (Modul Baru)
+        DAL dbLogic = new DAL();
+        private BindingSource bindingSource = new BindingSource();
+        private DataTable dtMahasiswa = new DataTable();
+
         public Form1()
         {
             InitializeComponent();
-            conn = new SqlConnection(connectionString);
         }
 
-        private void ConnectDatabase()
+        private void SimpanLog(string pesan)
         {
-            try
-            {
-                if (conn.State == ConnectionState.Closed)
-                {
-                    conn.Open();
-                    MessageBox.Show("Koneksi berhasil!");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Koneksi gagal: " + ex.Message);
-            }
+            dbLogic.SimpanLog(pesan);
         }
 
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex == 0)
-            {
-                DataGridViewRow row = dataGridView1.Rows[e.RowIndex];
-
-                textBox1.Text = row.Cells["NIM"].Value.ToString();
-                textBox5.Text = row.Cells["Nama"].Value.ToString();
-                comboBox1.Text = row.Cells["JenisKelamin"].Value.ToString();
-                dateTimePicker1.Value = Convert.ToDateTime(row.Cells["TanggalLahir"].Value);
-                textBox3.Text = row.Cells["Alamat"].Value.ToString();
-                textBox2.Text = row.Cells["KodeProdi"].Value.ToString();
-            }
-        }
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label4_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label5_Click(object sender, EventArgs e)
-        {
-
-        }
-
+        // FASE 1: INISIALISASI & UI SETTINGS
         private void Form1_Load(object sender, EventArgs e)
         {
-            comboBox1.Items.Clear();
-            comboBox1.Items.Add("L");
-            comboBox1.Items.Add("P");
+            // Menyiapkan ComboBox
+            cmbJK.Items.Clear();
+            cmbJK.Items.Add("L");
+            cmbJK.Items.Add("P");
 
+            // Keamanan Grid UI
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridView1.MultiSelect = false;
             dataGridView1.ReadOnly = true;
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-            dataGridView1.CellClick += dataGridView1_CellContentClick;
+            // Hubungkan BindingNavigator jika Anda menggunakannya di UI
+            // bindingNavigator1.BindingSource = bindingSource; 
+
+            // Panggil Data Pertama Kali
+            LoadData();
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            ConnectDatabase();
-        }
-
-        private void button2_Click(object sender, EventArgs e)
+        // FASE 2: ENGINE PEMANGGIL DATA (MENGGUNAKAN VIEW)
+        private void LoadData()
         {
             try
             {
-                if (conn.State == ConnectionState.Closed)
+                bindingSource.DataSource = dbLogic.GetMhs();
+                dataGridView1.DataSource = bindingSource;
+                DataGridViewImageColumn fotoColumn = (DataGridViewImageColumn)dataGridView1.Columns["Foto"];
+                fotoColumn.ImageLayout = DataGridViewImageCellLayout.Stretch;
+
+                HitungTotal();
+                foreach (DataGridViewColumn col in dataGridView1.Columns)
                 {
-                    conn.Open();
+                    Console.WriteLine("Name:", col.Name + "| DataPropertyName: " + col.DataPropertyName);
                 }
-
-                dataGridView1.Rows.Clear();
-                dataGridView1.Columns.Clear();
-
-                dataGridView1.Columns.Add("NIM", "NIM");
-                dataGridView1.Columns.Add("Nama", "Nama");
-                dataGridView1.Columns.Add("JenisKelamin", "Jenis Kelamin");
-                dataGridView1.Columns.Add("TanggalLahir", "Tanggal Lahir");
-                dataGridView1.Columns.Add("Alamat", "Alamat");
-                dataGridView1.Columns.Add("KodeProdi", "KodeProdi");
-
-                string query = "SELECT * FROM Mahasiswa";
-
-                SqlCommand cmd = new SqlCommand(query, conn);
-                SqlDataReader reader = cmd.ExecuteReader();
-
-                while (reader.Read())
-                {
-                    dataGridView1.Rows.Add(
-                        reader["NIM"].ToString(),
-                        reader["Nama"].ToString(),
-                        reader["JenisKelamin"].ToString(),
-                        Convert.ToDateTime(reader["TanggalLahir"]).ToShortDateString(),
-                        reader["alamat"].ToString(),
-                        reader["KodeProdi"].ToString()
-                        );
-                }
-
-                reader.Close();
+                dataGridView1.Enabled = true;
+                btnImpDb.Enabled = false;
+                btnInsert.Enabled = true;
+                btnUpdate.Enabled = true;
+                btnDelete.Enabled = true;
+                btnCari.Enabled = true;
+                btnLoad.Enabled = true;
+                btnReset.Enabled = true;
+                btnTestInjection.Enabled = true;
             }
-
-
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                MessageBox.Show("Gagal memuat data arsitektur: " + ex.Message);
             }
         }
 
+        // FASE 3: OTOMATISASI UI SINKRONISASI
+        // Ini menggantikan fungsi CellContentClick Anda yang manual dan tidak efisien.
+        private void BindControls()
+        {
+            // 1. Lepaskan binding lama untuk mencegah memory leak
+            txtNIM.DataBindings.Clear();
+            txtNama.DataBindings.Clear();
+            cmbJK.DataBindings.Clear();
+            dtpTanggalLahir.DataBindings.Clear();
+            txtAlamat.DataBindings.Clear();
+            txtKodeProdi.DataBindings.Clear();
+
+            // 2. Hubungkan secara dinamis ke Data Set
+            txtNIM.DataBindings.Add("Text", bindingSource, "NIM");
+            txtNama.DataBindings.Add("Text", bindingSource, "Nama");
+            cmbJK.DataBindings.Add("Text", bindingSource, "JenisKelamin");
+            dtpTanggalLahir.DataBindings.Add("Value", bindingSource, "TanggalLahir");
+            txtAlamat.DataBindings.Add("Text", bindingSource, "Alamat");
+            txtKodeProdi.DataBindings.Add("Text", bindingSource, "KodeProdi");
+        }
+
+        // FASE 4: OPERASIONAL TOMBOL (BUTTONS)
+
+        // Button 1: Test Koneksi
+        private void button1_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(dbLogic.GetConnectionString()))
+                {
+                    conn.Open();
+                    MessageBox.Show("Koneksi berhasil!");
+                }
+            }
+            catch (SqlException ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("Koneksi Error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("General Error: " + ex.Message);
+            }
+        }
+
+        // Button 2: Load Data (Refactored)
+        private void button2_Click(object sender, EventArgs e)
+        {
+            LoadData(); // Tidak perlu lagi looping manual SqlDataReader!
+        }
+
+        // Button 3: Insert Ter-Parameterisasi (Sangat Aman)
         private void button3_Click(object sender, EventArgs e)
         {
             try
             {
-                if (conn.State == ConnectionState.Closed)
+                byte[] ConvertImageToByte(PictureBox pb)
                 {
-                    conn.Open();
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        pb.Image.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                        return ms.ToArray();
+                    }
                 }
-                if (textBox1.Text == "")
-                {
-                    MessageBox.Show("NIM tidak boleh kosong.");
-                    return;
-                }
-                if (textBox5.Text == "")
-                {
-                    MessageBox.Show("Nama tidak boleh kosong.");
-                    return;
-                }
-                if (comboBox1.SelectedItem == null)
-                {
-                    MessageBox.Show("Jenis Kelamin harus dipilih.");
-                    return;
-                }
-                if (textBox3.Text == "")
-                {
-                    MessageBox.Show("Alamat tidak boleh kosong.");
-                    return;
-                }
-                if (textBox2.Text == "")
-                {
-                    MessageBox.Show("Kode Prodi tidak boleh kosong.");
-                    return;
-                }
-                string query = "INSERT INTO Mahasiswa (NIM, Nama, JenisKelamin, TanggalLahir, Alamat, KodeProdi) VALUES (@NIM, @Nama, @JenisKelamin, @TanggalLahir, @Alamat, @KodeProdi)";
-                SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@NIM", textBox1.Text);
-                cmd.Parameters.AddWithValue("@Nama", textBox5.Text);
-                cmd.Parameters.AddWithValue("@JenisKelamin", comboBox1.SelectedItem.ToString());
-                cmd.Parameters.AddWithValue("@TanggalLahir", dateTimePicker1.Value);
-                cmd.Parameters.AddWithValue("@Alamat", textBox3.Text);
-                cmd.Parameters.AddWithValue("@KodeProdi", textBox2.Text);
-                int result = cmd.ExecuteNonQuery();
-                if (result > 0)
-                {
-                    MessageBox.Show("Data berhasil ditambahkan!");
-                    clearForm();
-                    button2.PerformClick(); // Refresh data grid view
-                }
-                else
-                {
-                    MessageBox.Show("Gagal menambahkan data.");
-                }
+
+                byte[] imgBytes = ConvertImageToByte(fotoMhs);
+                dbLogic.InsertMhs(txtNIM.Text, txtNama.Text, txtAlamat.Text, cmbJK.Text, dtpTanggalLahir.Value.Date, txtKodeProdi.Text, imgBytes);
+                MessageBox.Show("Data berhasil disimpan!");
+                ClearForm();
+                LoadData();
+            }
+            catch (SqlException ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("SQL Error: " + ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                SimpanLog(ex.Message);
+                MessageBox.Show("General Error: " + ex.Message);
             }
         }
 
+
+        // Button 4: Update
         private void button4_Click(object sender, EventArgs e)
         {
             try
             {
-                if (conn.State == System.Data.ConnectionState.Closed)
+                byte[] ConvertImageToByte(PictureBox pb)
                 {
-                    conn.Open();
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        pb.Image.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                        return ms.ToArray();
+                    }
                 }
-                string query = @"UPDATE MAHASISWA
-                                SET NAMA=@Nama,
-                                JenisKelamin=@JenisKelamin,
-                                TanggalLahir=@TanggalLahir,
-                                Alamat=@Alamat,
-                                KodeProdi=@KodeProdi
-                                WHERE NIM=@NIM";
-                SqlCommand cmd = new SqlCommand(query, conn);
-
-                cmd.Parameters.AddWithValue("@NIM", textBox1.Text);
-                cmd.Parameters.AddWithValue("@Nama", textBox5.Text);
-                cmd.Parameters.AddWithValue("@JenisKelamin", comboBox1.Text);
-                cmd.Parameters.AddWithValue("@TanggalLahir", dateTimePicker1.Value.Date);
-                cmd.Parameters.AddWithValue("@Alamat", textBox3.Text);
-                cmd.Parameters.AddWithValue("@KodeProdi", textBox2.Text);
-
-                int result = cmd.ExecuteNonQuery();
-
-                if (result > 0)
-                {
-                    MessageBox.Show("Data berhasil diupdate!");
-                    clearForm();
-                    button2.PerformClick();
-                }
-                else
-                {
-                    MessageBox.Show("Gagal mengupdate data.");
-                }
-
+                byte[] imgBytes = ConvertImageToByte(fotoMhs);
+                dbLogic.UpdateMhs(txtNIM.Text, txtNama.Text, txtAlamat.Text, cmbJK.Text, dtpTanggalLahir.Value.Date, txtKodeProdi.Text, imgBytes);
+                MessageBox.Show("Data berhasil di-update!");
+                ClearForm();
+                LoadData();
+            }
+            catch (SqlException ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("SQL Error: " + ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                SimpanLog(ex.Message);
+                MessageBox.Show("General Error: " + ex.Message);
             }
         }
 
+        // Button 5: Delete
         private void button5_Click(object sender, EventArgs e)
         {
             try
             {
-                if (conn.State == System.Data.ConnectionState.Closed)
+                DialogResult dialogResult = MessageBox.Show("Apakah Anda yakin menghapus data ini?", "Otorisasi Diperlukan", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (dialogResult == DialogResult.Yes)
                 {
-                    conn.Open();
-                }
-
-                DialogResult dialogResult = MessageBox.Show("Apakah Anda yakin ingin menghapus data ini?", "Konfirmasi Hapus", MessageBoxButtons.YesNo);
-                string query = "DELETE FROM MAHASISWA WHERE NIM=@NIM";
-                SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@NIM", textBox1.Text);
-                int result = cmd.ExecuteNonQuery();
-                if (result > 0)
-                {
+                    dbLogic.DeleteMhs(txtNIM.Text);
                     MessageBox.Show("Data berhasil dihapus!");
-                    clearForm();
-                    button2.PerformClick();
+                    ClearForm();
+                    btnLoad.PerformClick(); // Refresh data setelah delete
                 }
-                else
-                {
-                    MessageBox.Show("Gagal menghapus data.");
-                }
+            }
+            catch (SqlException ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("SQL Error: " + ex.Message);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                SimpanLog(ex.Message);
+                MessageBox.Show("General Error: " + ex.Message);
             }
         }
 
-        private void clearForm()
+        private void HitungTotal()
         {
-            textBox1.Clear();
-            textBox5.Clear();
-            comboBox1.SelectedIndex = -1;
-            dateTimePicker1.Value = DateTime.Now;
-            textBox3.Clear();
-            textBox2.Clear();
+            try
+            {
+                int total = (dbLogic.CountMhs().Equals(DBNull.Value)) ? 0 : Convert.ToInt32(dbLogic.CountMhs());
+                label7.Text = "Total Mahasiswa: " + total.ToString();
+            }
+            catch (Exception ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("Gagal menghitung total: " + ex.Message);
+            }
+        }
+
+        // FASE 5: FITUR TAMBAHAN MODUL BARU (TUGAS PRAKTIKUM)
+
+        // Buat Button Baru di Designer: btnResetData, lalu sambungkan ke fungsi ini
+        private void btnResetData_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                dbLogic.resetData();
+                MessageBox.Show("Data berhasil direset dari sistem backup.");
+                LoadData();
+            }
+            catch (SqlException ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("Kegagalan SQL Recovery: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("Kegagalan Recovery: " + ex.Message);
+            }
+        }
+
+        // Buat Button Baru di Designer: btnTestInjection, lalu sambungkan ke fungsi ini
+        private void btnTestInjection_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                dbLogic.testInject(txtNIM.Text); // Pastikan fungsi ini ada di DAL dan menggunakan parameterisasi!
+                LoadData();
+            }
+            catch (SqlException ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("SQL Injection Detected: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("General Error: " + ex.Message);
+            }
+        }
+
+        private void btnRekap_Click(object sender, EventArgs e)
+        {
+            Form2 rekapForm = new Form2();
+            rekapForm.ShowDialog();
+        }
+
+        private void ClearForm()
+        {
+            txtNIM.Enabled = true;
+            txtNIM.Clear();
+            txtNama.Clear();
+            cmbJK.SelectedIndex = -1;
+            txtAlamat.Clear();
+            txtKodeProdi.Clear();
+            dtpTanggalLahir.Value = DateTime.Now;
+            fotoMhs.Image = null;
+            txtNIM.Focus();
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex == 0)
+            {
+                DataRow row =((DataRowView) dataGridView1.Rows[e.RowIndex].DataBoundItem).Row;
+                txtNIM.Text = row[0].ToString();
+                txtNama.Text = row[1].ToString();
+                cmbJK.Text = row[2].ToString();
+                dtpTanggalLahir.Value = Convert.ToDateTime(row[3]);
+                txtAlamat.Text = row[4].ToString();
+                txtKodeProdi.Text = row[6].ToString();
+                if (row[5] != DBNull.Value)
+                {
+                    using (MemoryStream ms = new MemoryStream((byte[])row[5]))
+                    {
+                        fotoMhs.Image = System.Drawing.Image.FromStream(ms);
+                    }
+                }
+                else
+                {
+                    fotoMhs.Image = null;
+                }
+                txtNIM.Enabled = false;
+            }
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp";
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                fotoMhs.Image = System.Drawing.Image.FromFile(openFileDialog.FileName);
+            }
+        }
+
+        private void btnImportExcel_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "Excel Workbook|*.xlsx" })
+            {
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string filePath = openFileDialog.FileName;
+                    using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
+                    {
+                        using (var reader = ExcelReaderFactory.CreateReader(stream))
+                        {
+                            var result = reader.AsDataSet(new ExcelDataSetConfiguration()
+                            {
+                                ConfigureDataTable = (_) => new ExcelDataTableConfiguration()
+                                {
+                                    UseHeaderRow = true
+                                }
+                            });
+
+                            // Indeks array menggunakan angka nol (0), BUKAN huruf 'o'
+                            DataTable dt = result.Tables[0];
+
+                            dataGridView1.DataSource = dt;
+                            dataGridView1.Enabled = false;
+
+                            btnImpDb.Enabled = true;
+                            btnInsert.Enabled = false;
+                            btnUpdate.Enabled = false;
+                            btnDelete.Enabled = false;
+                            btnCari.Enabled = false;
+                            btnLoad.Enabled = false;
+                            btnReset.Enabled = false;
+                            btnTestInjection.Enabled = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void btnImpDb_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                DataTable dt = (DataTable)dataGridView1.DataSource;
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    MessageBox.Show("No data to import.");
+                    return;
+                }
+
+                int sukses = 0;
+                foreach (DataRow row in dt.Rows)
+                {
+                    string nim = row["NIM"].ToString().Trim();
+                    string nama = row["Nama"].ToString().Trim();
+                    string jk = row["JenisKelamin"].ToString().Trim();
+                    string alamat = row["Alamat"].ToString().Trim();
+                    string kodeProdi = row["KodeProdi"].ToString().Trim();
+                    string fotoPath = row.Table.Columns.Contains("Foto") ? row["Foto"].ToString().Trim() : string.Empty;
+                    if (string.IsNullOrEmpty(nim) || string.IsNullOrEmpty(nama))
+                        continue;
+
+                    DateTime tglLahir;
+                    if (!DateTime.TryParse(row["TanggalLahir"].ToString(), out tglLahir))
+                        continue;
+                    byte[] ConvertImageFromPath(string path)
+                    {
+                        if (string.IsNullOrWhiteSpace(path))
+                            return null;
+                        if (!File.Exists(path))
+                            return null;
+                        return File.ReadAllBytes(path);
+                    }
+                    byte[] fotoBytes =  ConvertImageFromPath(fotoPath);
+                    dbLogic.InsertMhs(nim, nama, alamat, jk, tglLahir, kodeProdi, fotoBytes);
+                    sukses++;
+                }
+                MessageBox.Show("Import selesai! " + sukses + " record berhasil diimpor.");
+                ClearForm();
+                LoadData();
+            }
+            catch (SqlException ex)
+            {
+                SimpanLog(ex.Message);
+                MessageBox.Show("SQL Error during import: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                SimpanLog(ex.Message); 
+                MessageBox.Show("Error: " + ex.Message);
+            }
         }
     }
 }
