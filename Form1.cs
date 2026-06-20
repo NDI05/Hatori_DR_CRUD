@@ -46,32 +46,43 @@ namespace PraktikumADO
 
             // Panggil Data Pertama Kali
             LoadData();
+            bindingSource.AddNew();
         }
 
         private void bindingSource_CurrentChanged(object sender, EventArgs e)
         {
             if (bindingSource.Current != null)
             {
-                DataRow row = ((DataRowView)bindingSource.Current).Row;
-                txtNIM.Text = row["NIM"].ToString();
-                txtNama.Text = row["Nama"].ToString();
-                cmbJK.Text = row["JenisKelamin"].ToString();
-                if (row["TanggalLahir"] != DBNull.Value)
-                    dtpTanggalLahir.Value = Convert.ToDateTime(row["TanggalLahir"]);
-                txtAlamat.Text = row["Alamat"].ToString();
-                txtKodeProdi.Text = row["KodeProdi"].ToString();
-                
-                if (row["Foto"] != DBNull.Value)
+                DataRowView drv = (DataRowView)bindingSource.Current;
+                if (drv.IsNew || drv.Row["NIM"] == DBNull.Value || string.IsNullOrEmpty(drv.Row["NIM"].ToString()))
                 {
-                    byte[] imgData = (byte[])row["Foto"];
-                    MemoryStream ms = new MemoryStream(imgData);
-                    fotoMhs.Image = System.Drawing.Image.FromStream(ms);
+                    // Mode Tambah Data Baru
+                    ClearForm();
                 }
                 else
                 {
-                    fotoMhs.Image = null;
+                    // Mode Edit/View Data
+                    DataRow row = drv.Row;
+                    txtNIM.Text = row["NIM"].ToString();
+                    txtNama.Text = row["Nama"].ToString();
+                    cmbJK.Text = row["JenisKelamin"].ToString();
+                    if (row["TanggalLahir"] != DBNull.Value)
+                        dtpTanggalLahir.Value = Convert.ToDateTime(row["TanggalLahir"]);
+                    txtAlamat.Text = row["Alamat"].ToString();
+                    txtKodeProdi.Text = row["KodeProdi"].ToString();
+                    
+                    if (row["Foto"] != DBNull.Value)
+                    {
+                        byte[] imgData = (byte[])row["Foto"];
+                        MemoryStream ms = new MemoryStream(imgData);
+                        fotoMhs.Image = System.Drawing.Image.FromStream(ms);
+                    }
+                    else
+                    {
+                        fotoMhs.Image = null;
+                    }
+                    txtNIM.Enabled = false;
                 }
-                txtNIM.Enabled = false;
             }
         }
 
@@ -326,8 +337,16 @@ namespace PraktikumADO
 
         private void btnRefresh_Click(object sender, EventArgs e)
         {
-            ClearForm();
-            LoadData();
+            try
+            {
+                // Reload data to make sure grid is up to date, then add a new record
+                LoadData();
+                bindingSource.AddNew();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
         }
 
         private void btnCari_Click(object sender, EventArgs e)
