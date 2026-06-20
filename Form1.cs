@@ -42,11 +42,37 @@ namespace PraktikumADO
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-            // Hubungkan BindingNavigator jika Anda menggunakannya di UI
-            // bindingNavigator1.BindingSource = bindingSource; 
+            bindingSource.CurrentChanged += bindingSource_CurrentChanged;
 
             // Panggil Data Pertama Kali
             LoadData();
+        }
+
+        private void bindingSource_CurrentChanged(object sender, EventArgs e)
+        {
+            if (bindingSource.Current != null)
+            {
+                DataRow row = ((DataRowView)bindingSource.Current).Row;
+                txtNIM.Text = row["NIM"].ToString();
+                txtNama.Text = row["Nama"].ToString();
+                cmbJK.Text = row["JenisKelamin"].ToString();
+                if (row["TanggalLahir"] != DBNull.Value)
+                    dtpTanggalLahir.Value = Convert.ToDateTime(row["TanggalLahir"]);
+                txtAlamat.Text = row["Alamat"].ToString();
+                txtKodeProdi.Text = row["KodeProdi"].ToString();
+                
+                if (row["Foto"] != DBNull.Value)
+                {
+                    byte[] imgData = (byte[])row["Foto"];
+                    MemoryStream ms = new MemoryStream(imgData);
+                    fotoMhs.Image = System.Drawing.Image.FromStream(ms);
+                }
+                else
+                {
+                    fotoMhs.Image = null;
+                }
+                txtNIM.Enabled = false;
+            }
         }
 
         // FASE 2: ENGINE PEMANGGIL DATA (MENGGUNAKAN VIEW)
@@ -56,6 +82,7 @@ namespace PraktikumADO
             {
                 bindingSource.DataSource = dbLogic.GetMhs();
                 dataGridView1.DataSource = bindingSource;
+                bindingNavigator1.BindingSource = bindingSource;
                 DataGridViewImageColumn fotoColumn = (DataGridViewImageColumn)dataGridView1.Columns["Foto"];
                 fotoColumn.ImageLayout = DataGridViewImageCellLayout.Stretch;
 
@@ -339,27 +366,7 @@ namespace PraktikumADO
 
         private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex >= 0)
-            {
-                DataRow row =((DataRowView) dataGridView1.Rows[e.RowIndex].DataBoundItem).Row;
-                txtNIM.Text = row[0].ToString();
-                txtNama.Text = row[1].ToString();
-                cmbJK.Text = row[2].ToString();
-                dtpTanggalLahir.Value = Convert.ToDateTime(row[3]);
-                txtAlamat.Text = row[4].ToString();
-                txtKodeProdi.Text = row["KodeProdi"].ToString();
-                if (row[5] != DBNull.Value)
-                {
-                    byte[] imgData = (byte[])row[5];
-                    MemoryStream ms = new MemoryStream(imgData);
-                    fotoMhs.Image = System.Drawing.Image.FromStream(ms);
-                }
-                else
-                {
-                    fotoMhs.Image = null;
-                }
-                txtNIM.Enabled = false;
-            }
+            // Sinkronisasi data sekarang ditangani secara otomatis oleh bindingSource_CurrentChanged
         }
 
         private void button6_Click(object sender, EventArgs e)
